@@ -1,0 +1,24 @@
+#!/bin/bash
+set -o nounset
+set -o errexit
+
+word=$1
+
+cache=~/.cache/webster
+mkdir -p $cache
+
+file="$cache/$word.mp3"
+temp="$cache/$word.mp3.tmp"
+
+if [ ! -f $file ]; then
+  page=$(curl -L http://www.merriam-webster.com/dictionary/$word | grep '<div class="word-header">' -A 6)
+  source_file=$(echo $page | sed -n 's/.*<a class="play-pron" data-lang="en_us"[^>]* data-file="\([^"]\+\).*/\1/p')
+  source_part=$(echo $page | sed -n 's/.*<a class="play-pron" data-lang="en_us"[^>]* data-dir="\([^"]\+\).*/\1/p')
+  echo $source_file
+  echo $source_part
+  url=http://media.merriam-webster.com/audio/prons/en/us/mp3/$source_part/$source_file.mp3
+  wget -O $temp $url
+  mv $temp $file
+fi
+
+mpg123 $file
